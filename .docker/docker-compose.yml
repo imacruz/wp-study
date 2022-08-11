@@ -1,0 +1,39 @@
+version: '3.5'
+
+services:
+
+  wp-study:
+      build: 
+        context: ./app
+      container_name: wp-study      
+      entrypoint: dockerize -wait tcp://db-wp-study:3306 -timeout 40s /var/www/.docker/app/docker-entrypoint.sh php-fpm
+      volumes:
+        - ../.:/var/www
+      ports:
+        - "80:80"
+        - "9000:9000"
+      tty: true
+      networks:
+        - wp-study-network
+      depends_on:
+        - db-wp-study
+
+  db-wp-study:
+    build: ./mariadb
+    command: --innodb-use-native-aio=0
+    container_name: db-wp-study
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mariadb/data:/var/lib/mysql
+      - ./mariadb/entrypoint:/docker-entrypoint-initdb.d
+    tty: true
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    networks:
+      - wp-study-network
+
+
+networks:
+  wp-study-network:
+    driver: bridge
